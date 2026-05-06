@@ -1,0 +1,48 @@
+[project]
+name = "vciso-assistant"
+version = "0.1.0"
+description = "Interactive vCISO assistant. Slack-first bot that answers ad-hoc policy questions, tracks open risks, and drafts monthly board updates from a YAML risk register + the company's policy KB."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+
+dependencies = [
+    "b2b-agent-toolkit",
+    "langgraph>=0.2.40",
+    "anthropic>=0.39",
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "sqlalchemy>=2.0",
+    "aiosqlite>=0.20",
+    "weasyprint>=62.0",
+    "jinja2>=3.1",
+    "pyyaml>=6.0",
+    "typer>=0.12",
+    "rich>=13.7",
+    "structlog>=24.1",
+    "python-dotenv>=1.0",
+    "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.3",
+]
+
+[project.scripts]
+vciso = "vciso.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/vciso"]
+
+[tool.uv.sources]
+b2b-agent-toolkit = { path = "../b2b-agent-toolkit", editable = true }
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

@@ -1,0 +1,157 @@
+# Seed risk register. This is the company's open-risk inventory the
+# vCISO tracks and reports on. In production, risks come from incidents,
+# audits, vuln scans, customer questionnaires that exposed gaps, etc.
+# Here we seed 10 representative risks across categories.
+
+risks:
+  - id: R-001
+    title: Storage account allows public blob access
+    category: Cloud Configuration
+    severity: high
+    status: open
+    likelihood: medium
+    impact: high
+    discovered_at: 2026-04-15
+    discovered_by: compliance-evidence-agent (run 73dcbc5819)
+    owner: cloud-platform-team
+    target_close_date: 2026-05-30
+    notes: |
+      Storage account aamlogs01 has allowBlobPublicAccess=true. Disable
+      via az CLI or refactor to require SAS tokens for any public-ish
+      access pattern.
+
+  - id: R-002
+    title: No subscription-level diagnostic settings export
+    category: Logging & Monitoring
+    severity: medium
+    status: open
+    likelihood: high
+    impact: medium
+    discovered_at: 2026-04-15
+    discovered_by: compliance-evidence-agent
+    owner: secops-team
+    target_close_date: 2026-06-15
+    notes: |
+      Subscription activity log is not exporting to Sentinel. Without
+      this, control CC7.2 fails on audit.
+
+  - id: R-003
+    title: MFA-for-admins policy exists but excludes one role
+    category: Identity & Access
+    severity: high
+    status: in_progress
+    likelihood: medium
+    impact: high
+    discovered_at: 2026-03-22
+    discovered_by: internal review
+    owner: identity-team
+    target_close_date: 2026-05-15
+    notes: |
+      Conditional access policy "Require MFA for admins" excludes the
+      "Directory Synchronization Accounts" role. Reviewing whether the
+      exclusion is still required (legacy AD Connect).
+
+  - id: R-004
+    title: Incident response tabletop overdue
+    category: Operations
+    severity: medium
+    status: open
+    likelihood: high
+    impact: medium
+    discovered_at: 2026-02-01
+    discovered_by: annual review schedule
+    owner: secops-team
+    target_close_date: 2026-05-31
+    notes: |
+      Annual tabletop is required by SOC 2 CC7.3. Last exercise was
+      2025-04. Schedule with engineering + CS leadership.
+
+  - id: R-005
+    title: Vendor risk review backlog
+    category: Vendor Management
+    severity: low
+    status: open
+    likelihood: high
+    impact: low
+    discovered_at: 2026-03-30
+    discovered_by: GRC review
+    owner: legal
+    target_close_date: 2026-07-31
+    notes: |
+      14 vendors are past their annual review date. None are critical;
+      backlog is administrative not technical.
+
+  - id: R-006
+    title: PII exposed in dev logs (legacy code path)
+    category: Data Protection
+    severity: high
+    status: in_progress
+    likelihood: low
+    impact: high
+    discovered_at: 2026-04-01
+    discovered_by: code review
+    owner: backend-team
+    target_close_date: 2026-05-08
+    notes: |
+      Legacy /v1 API logs raw email addresses on parse error. Patch in
+      review, will be redacted at the logger layer.
+
+  - id: R-007
+    title: Backup restore not tested in 14 months
+    category: Business Continuity
+    severity: medium
+    status: open
+    likelihood: low
+    impact: high
+    discovered_at: 2026-04-10
+    discovered_by: BC/DR review
+    owner: platform-team
+    target_close_date: 2026-06-15
+    notes: |
+      Automated backups run daily; last successful end-to-end restore
+      test was 2025-02. Schedule a Q2 quarterly restore exercise.
+
+  - id: R-008
+    title: Phishing simulation click rate above target
+    category: Awareness
+    severity: low
+    status: monitoring
+    likelihood: medium
+    impact: low
+    discovered_at: 2026-04-05
+    discovered_by: KnowBe4 quarterly report
+    owner: security-awareness-program
+    target_close_date: 2026-07-01
+    notes: |
+      Q1 click rate 7.2% vs target ≤ 5%. Engineering org skewed high
+      (12.4%). Targeted retraining for top 3 teams scheduled.
+
+  - id: R-009
+    title: Subprocessor missing DPA on file
+    category: Compliance
+    severity: medium
+    status: in_progress
+    likelihood: medium
+    impact: medium
+    discovered_at: 2026-04-12
+    discovered_by: legal review
+    owner: legal
+    target_close_date: 2026-05-20
+    notes: |
+      Subprocessor "Datadog" was added 2026-03 without a counter-signed
+      DPA. Legal is finalizing.
+
+  - id: R-010
+    title: PIM activation logs not retained per policy
+    category: Logging & Monitoring
+    severity: low
+    status: closed
+    likelihood: low
+    impact: low
+    discovered_at: 2026-01-10
+    discovered_by: internal audit
+    closed_at: 2026-03-22
+    owner: identity-team
+    notes: |
+      PIM activation log retention was 90 days vs 1-year policy.
+      Adjusted via diagnostic settings export to Log Analytics.

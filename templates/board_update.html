@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Monthly Board Update — {{ period }}</title>
+<style>
+  @page { size: Letter; margin: 22mm 18mm; @bottom-center { content: counter(page) " / " counter(pages); color: #888; font-size: 9pt; } }
+  body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; color: #1a1a1a; font-size: 10.5pt; line-height: 1.45; }
+
+  .cover { text-align: center; padding-top: 50mm; }
+  .cover .label { color: #777; letter-spacing: 1pt; font-size: 10pt; }
+  .cover h1 { font-size: 32pt; margin: 4mm 0 6mm; }
+  .cover .meta { color: #555; font-size: 11pt; }
+  .pillrow { margin-top: 16mm; }
+  .pill { display: inline-block; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 10pt; }
+  .pill.open { background: #e7f0fb; color: #0b3d91; }
+  .pill.closed { background: #d4edda; color: #155724; }
+  .pill.overdue { background: #f8d7da; color: #721c24; }
+
+  h2.section { font-size: 16pt; border-bottom: 2px solid #0b3d91; padding-bottom: 4px; margin-top: 14mm; }
+  .narrative { background: #f4f6f9; padding: 6mm 8mm; border-left: 4px solid #0b3d91; margin: 6mm 0; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 4mm; }
+  table th, table td { padding: 6px 8px; text-align: left; vertical-align: top; font-size: 9.5pt; }
+  table th { background: #f4f6f9; font-weight: 700; border-bottom: 1px solid #ccc; }
+  table td { border-bottom: 1px solid #eaeaea; }
+  td.sev-high, td.sev-critical { font-weight: 700; color: #721c24; }
+  td.sev-medium { color: #856404; }
+  td.sev-low { color: #555; }
+  .severity-bar { display: inline-block; height: 16px; border-radius: 4px; margin: 4px 8px 4px 0; }
+  .severity-bar.high { background: #d9534f; }
+  .severity-bar.medium { background: #f0ad4e; }
+  .severity-bar.low { background: #5bc0de; }
+  .severity-bar.critical { background: #4a0d0d; }
+
+  .pagebreak { page-break-after: always; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <div class="label">SECURITY POSTURE</div>
+  <h1>Monthly Board Update</h1>
+  <div class="meta">
+    Period: <strong>{{ period }}</strong><br>
+    Generated: {{ generated_at }} · run id <code>{{ update_id }}</code>
+  </div>
+  <div class="pillrow">
+    <span class="pill open">{{ open_count }} open risks</span>
+    &nbsp;<span class="pill closed">{{ closed_this_period|length }} closed this period</span>
+    &nbsp;<span class="pill overdue">{{ overdue_count }} overdue</span>
+  </div>
+</section>
+
+<div class="pagebreak"></div>
+
+<h2 class="section">Executive narrative</h2>
+<div class="narrative">{{ narrative_md }}</div>
+
+<h2 class="section">Open risks by severity</h2>
+<table>
+  <thead><tr><th>Severity</th><th>Count</th><th></th></tr></thead>
+  <tbody>
+    {% for sev in ['critical', 'high', 'medium', 'low'] %}
+    {% if by_severity.get(sev, 0) > 0 %}
+    <tr>
+      <td class="sev-{{ sev }}">{{ sev|capitalize }}</td>
+      <td>{{ by_severity[sev] }}</td>
+      <td>
+        {% for _ in range(by_severity[sev]) %}<span class="severity-bar {{ sev }}" style="width: 16px;"></span>{% endfor %}
+      </td>
+    </tr>
+    {% endif %}
+    {% endfor %}
+  </tbody>
+</table>
+
+<h2 class="section">Top 5 priorities this month</h2>
+<table>
+  <thead><tr><th>ID</th><th>Risk</th><th>Severity</th><th>Owner</th><th>Target close</th></tr></thead>
+  <tbody>
+    {% for r in top5 %}
+    <tr>
+      <td><code>{{ r.id }}</code></td>
+      <td>{{ r.title }}</td>
+      <td class="sev-{{ r.severity }}">{{ r.severity|capitalize }}</td>
+      <td>{{ r.owner }}</td>
+      <td>{{ r.target_close_date or '—' }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h2 class="section">Closed this period</h2>
+{% if closed_this_period %}
+<table>
+  <thead><tr><th>ID</th><th>Risk</th><th>Closed</th></tr></thead>
+  <tbody>
+    {% for r in closed_this_period %}
+    <tr>
+      <td><code>{{ r.id }}</code></td>
+      <td>{{ r.title }}</td>
+      <td>{{ r.closed_at }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No risks closed in this period.</p>
+{% endif %}
+
+<h2 class="section">Overdue risks (target close passed)</h2>
+{% if overdue %}
+<table>
+  <thead><tr><th>ID</th><th>Risk</th><th>Severity</th><th>Owner</th><th>Target was</th></tr></thead>
+  <tbody>
+    {% for r in overdue %}
+    <tr>
+      <td><code>{{ r.id }}</code></td>
+      <td>{{ r.title }}</td>
+      <td class="sev-{{ r.severity }}">{{ r.severity|capitalize }}</td>
+      <td>{{ r.owner }}</td>
+      <td>{{ r.target_close_date }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No overdue risks. Targets are realistic and being met.</p>
+{% endif %}
+
+</body>
+</html>

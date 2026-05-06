@@ -1,0 +1,56 @@
+# Reuses the same KB schema as security-questionnaire-responder.
+# In production these would be the same file (or generated from the same
+# policy source). For the demo this is a focused subset relevant to the
+# kinds of questions a vCISO answers in Slack.
+
+knowledge:
+  - id: KB-IAM-MFA
+    topics: [mfa, authentication, login, 2fa]
+    statement: |
+      All employee accounts use MFA via Entra ID. Admin roles require
+      phishing-resistant MFA (FIDO2). Policy doc SEC-IAM-001 §3.2.
+
+  - id: KB-IAM-PRIV
+    topics: [privileged_access, pim, jit, admin]
+    statement: |
+      Privileged access uses Entra Privileged Identity Management (PIM)
+      with just-in-time activation, MFA challenge, and a 4-hour max
+      activation window. All activations are logged.
+
+  - id: KB-CRYPTO-AT-REST
+    topics: [encryption, encryption_at_rest, key_management]
+    statement: |
+      AES-256 with customer-managed keys in Azure Key Vault. Key Vaults
+      have soft-delete and purge protection enabled. Policy SEC-CRY-002.
+
+  - id: KB-CRYPTO-IN-TRANSIT
+    topics: [tls, https, encryption_in_transit]
+    statement: |
+      TLS 1.2+ enforced everywhere; TLS 1.0/1.1 are blocked at the LB.
+      HSTS is set to max-age=31536000.
+
+  - id: KB-IR-NOTIFICATION
+    topics: [breach_notification, incident_response, customer_notification]
+    statement: |
+      Customers are notified of a confirmed security incident affecting
+      their data within 72 hours of detection. Policy SEC-IR-001.
+
+  - id: KB-VENDOR-SUBPROC
+    topics: [subprocessor, vendor, third_party]
+    statement: |
+      Subprocessor list at trust.cyberco.example.com; customers receive
+      30-day notice before any addition with a contractual right to
+      object.
+
+  - id: KB-DATA-RETENTION
+    topics: [retention, deletion, data_lifecycle]
+    statement: |
+      Customer data retained for the contract duration plus 30 days,
+      then irreversibly deleted within 90 days. Deletion is verified
+      via post-deletion audit.
+
+  - id: KB-COMPLIANCE-SOC2
+    topics: [soc2, audit, attestation]
+    statement: |
+      SOC 2 Type 2 attestation issued by Schellman; current report
+      covers 2024-04-01 through 2025-03-31. Available under NDA.
