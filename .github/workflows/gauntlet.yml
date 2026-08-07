@@ -17,11 +17,36 @@ jobs:
   python:
     name: Python
     runs-on: ubuntu-latest
+    # Checked out into ./agent (as tests.yml already does) so the sibling
+    # b2b-agent-toolkit repo can live beside it without ruff or mypy ever
+    # seeing it as part of this project's source tree.
+    defaults:
+      run:
+        working-directory: agent
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: agent
+      # b2b-agent-toolkit is a dependency with no PyPI release; it resolves
+      # from a sibling checkout, which is how tests.yml installs it too.
+      - uses: actions/checkout@v4
+        with:
+          repository: anthonyonazure/b2b-agent-toolkit
+          path: b2b-agent-toolkit
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
-      - run: pip install ruff mypy pytest
+      # WeasyPrint links against pango/cairo at import time, so the board
+      # update test cannot run without these. Same list tests.yml installs.
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y libpango-1.0-0 libpangoft2-1.0-0 \
+            libcairo2 libffi-dev libgdk-pixbuf2.0-0 fonts-liberation
+      # Install the project itself, not just the tools: without its
+      # dependencies mypy cannot resolve sqlalchemy/jinja2/structlog/typer and
+      # pytest cannot even import the `vciso` package.
+      - run: |
+          pip install -e ../b2b-agent-toolkit
+          pip install -e ".[dev]" ruff mypy
       - run: ruff check .
       - run: ruff format --check .
       - run: mypy .

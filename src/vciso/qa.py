@@ -12,16 +12,18 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-from typing import Any
 
 import yaml
 from sqlalchemy import select
 
 from vciso.db import Risk, session
+from vciso.llm import first_text
 
 
 def load_kb(path: str | None = None) -> list[dict]:
-    p = Path(path or os.environ.get("VCISO_KNOWLEDGE_BASE", "knowledge_base/cyber_co.yaml"))
+    p = Path(
+        path or os.environ.get("VCISO_KNOWLEDGE_BASE", "knowledge_base/cyber_co.yaml")
+    )
     return yaml.safe_load(p.read_text())["knowledge"]
 
 
@@ -51,14 +53,19 @@ def _risk_to_dict(r: Risk) -> dict:
         "severity": r.severity,
         "status": r.status,
         "owner": r.owner,
-        "target_close_date": r.target_close_date.isoformat() if r.target_close_date else None,
+        "target_close_date": r.target_close_date.isoformat()
+        if r.target_close_date
+        else None,
     }
 
 
 def kb_retrieve(question: str, kb: list[dict], top_k: int = 3) -> list[dict]:
     """Reuse the same lexical+topic logic as SQR."""
-    from sqr.retrieval import retrieve  # type: ignore[import-not-found]
     try:
+        # SQR is an optional sibling project; the import has to sit inside the
+        # try or the ImportError escapes before the fallback below can run.
+        from sqr.retrieval import retrieve  # type: ignore[import-not-found]
+
         return retrieve(question, kb, top_k=top_k)
     except ImportError:
         # If SQR isn't installed, do a lightweight inline version
@@ -122,7 +129,9 @@ def _stub_answer(question: str, kb_hits: list[dict], risks: list[dict]) -> dict:
     if kb_hits:
         parts.append(kb_hits[0]["statement"].strip().split("\n")[0])
     if risks:
-        parts.append(f"Open risk to flag: {risks[0]['title']} ({risks[0]['severity']}, owner: {risks[0]['owner']}).")
+        parts.append(
+            f"Open risk to flag: {risks[0]['title']} ({risks[0]['severity']}, owner: {risks[0]['owner']})."
+        )
     return {
         "answer": " ".join(parts),
         "kb_citations": [h["id"] for h in kb_hits[:2]],
@@ -142,7 +151,10 @@ async def answer_question(question: str, *, kb: list[dict] | None = None) -> dic
 
     from anthropic import AsyncAnthropic
 
-    kb_block = "\n\n".join(f"[{e['id']}] {e['statement'].strip()}" for e in kb_hits) or "(none)"
+    kb_block = (
+        "\n\n".join(f"[{e['id']}] {e['statement'].strip()}" for e in kb_hits)
+        or "(none)"
+    )
     risks_block = (
         "\n".join(
             f"- [{r['id']}] {r['title']} ({r['severity']}, {r['status']}, owner: {r['owner']})"
@@ -154,14 +166,20 @@ async def answer_question(question: str, *, kb: list[dict] | None = None) -> dic
     msg = await client.messages.create(
         model=os.environ.get("VCISO_MODEL", "claude-sonnet-4-6"),
         max_tokens=600,
-        messages=[{"role": "user", "content": _PROMPT.format(
-            question=question, kb_block=kb_block, risks_block=risks_block,
-        )}],
+        messages=[
+            {
+                "role": "user",
+                "content": _PROMPT.format(
+                    question=question,
+                    kb_block=kb_block,
+                    risks_block=risks_block,
+                ),
+            }
+        ],
     )
-    text = msg.content[0].text.strip()
+    text = first_text(msg).strip()
     if text.startswith("```"):
         text = text.split("```", 2)[1]
-        if text.startswith("json"):
-            text = text[4:]
+        text = text.removeprefix("json")
         text = text.rsplit("```", 1)[0].strip()
     return json.loads(text)

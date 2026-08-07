@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import os
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import date, datetime
-from typing import AsyncIterator
 
-from sqlalchemy import Date, DateTime, JSON, String
+from sqlalchemy import JSON, Date, DateTime, String
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -27,8 +27,12 @@ class Risk(Base):
     id: Mapped[str] = mapped_column(String, primary_key=True)
     title: Mapped[str] = mapped_column(String)
     category: Mapped[str] = mapped_column(String, index=True)
-    severity: Mapped[str] = mapped_column(String, index=True)  # low / medium / high / critical
-    status: Mapped[str] = mapped_column(String, index=True)    # open / in_progress / monitoring / closed
+    severity: Mapped[str] = mapped_column(
+        String, index=True
+    )  # low / medium / high / critical
+    status: Mapped[str] = mapped_column(
+        String, index=True
+    )  # open / in_progress / monitoring / closed
     likelihood: Mapped[str] = mapped_column(String)
     impact: Mapped[str] = mapped_column(String)
     owner: Mapped[str] = mapped_column(String)

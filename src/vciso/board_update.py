@@ -14,7 +14,7 @@ import hashlib
 import os
 import uuid
 from collections import Counter
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -24,33 +24,46 @@ from sqlalchemy import select
 from weasyprint import HTML
 
 from vciso.db import BoardUpdate, Risk, session
+from vciso.llm import first_text
 
 log = structlog.get_logger()
 
 TEMPLATES = Path(__file__).resolve().parents[2] / "templates"
-_env = Environment(loader=FileSystemLoader(TEMPLATES), autoescape=select_autoescape(["html", "xml"]))
+_env = Environment(
+    loader=FileSystemLoader(TEMPLATES), autoescape=select_autoescape(["html", "xml"])
+)
+
+
+def _today() -> date:
+    """Today's date in UTC.
+
+    ``_today()`` reads the host's local clock, so the same register would
+    age risks differently depending on which region the report ran in. Every
+    other timestamp in this module is already UTC.
+    """
+    return datetime.now(UTC).date()
 
 
 def _summarize(risks: list[Risk]) -> dict:
     open_risks = [r for r in risks if r.status != "closed"]
     closed_this_period = [
-        r for r in risks
-        if r.status == "closed" and r.closed_at
-        and (date.today() - r.closed_at).days <= 35
+        r
+        for r in risks
+        if r.status == "closed" and r.closed_at and (_today() - r.closed_at).days <= 35
     ]
     by_severity = Counter(r.severity for r in open_risks)
     by_category = Counter(r.category for r in open_risks)
 
     overdue = []
     for r in open_risks:
-        if r.target_close_date and r.target_close_date < date.today():
+        if r.target_close_date and r.target_close_date < _today():
             overdue.append(r)
 
     top5 = sorted(
         open_risks,
         key=lambda r: (
             {"critical": 4, "high": 3, "medium": 2, "low": 1}.get(r.severity, 0),
-            -((r.target_close_date - date.today()).days if r.target_close_date else 999),
+            -((r.target_close_date - _today()).days if r.target_close_date else 999),
         ),
         reverse=True,
     )[:5]
@@ -97,11 +110,11 @@ async def _narrative(summary: dict) -> str:
         max_tokens=400,
         messages=[{"role": "user", "content": prompt}],
     )
-    return msg.content[0].text.strip()
+    return first_text(msg).strip()
 
 
 async def generate_board_update(period: str | None = None) -> dict[str, Any]:
-    period = period or datetime.now(timezone.utc).strftime("%Y-%m")
+    period = period or datetime.now(UTC).strftime("%Y-%m")
     update_id = uuid.uuid4().hex[:10]
 
     async with session() as s:
@@ -113,7 +126,7 @@ async def generate_board_update(period: str | None = None) -> dict[str, Any]:
     template = _env.get_template("board_update.html")
     html = template.render(
         period=period,
-        generated_at=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+        generated_at=datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC"),
         update_id=update_id,
         narrative_md=narrative_md,
         **summary,
@@ -136,9 +149,26 @@ async def generate_board_update(period: str | None = None) -> dict[str, Any]:
         f"{narrative_md}"
     )
     async with session() as s:
-        s.add(BoardUpdate(
-            id=update_id, period=period, generated_at=datetime.now(timezone.utc).replace(tzinfo=None),
-            markdown=md_text, pdf_path=str(pdf_path),
-        ))
-    log.info("vciso.board_update.generated", id=update_id, period=period, pdf=str(pdf_path), sha=sha[:12])
-    return {"id": update_id, "period": period, "pdf_path": str(pdf_path), "sha256": sha, "summary": summary}
+        s.add(
+            BoardUpdate(
+                id=update_id,
+                period=period,
+                generated_at=datetime.now(UTC).replace(tzinfo=None),
+                markdown=md_text,
+                pdf_path=str(pdf_path),
+            )
+        )
+    log.info(
+        "vciso.board_update.generated",
+        id=update_id,
+        period=period,
+        pdf=str(pdf_path),
+        sha=sha[:12],
+    )
+    return {
+        "id": update_id,
+        "period": period,
+        "pdf_path": str(pdf_path),
+        "sha256": sha,
+        "summary": summary,
+    }

@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 from pathlib import Path
 
-import structlog
 import typer
 from dotenv import load_dotenv
 from rich.console import Console
@@ -43,17 +42,25 @@ def ask(question: str = typer.Argument(..., help="The question to answer")):
     """Ask the vCISO a question (CLI form of the Slack bot)."""
     ans = asyncio.run(answer_question(question))
     console.print(f"\n[bold]{ans['answer']}[/]\n")
-    console.print(f"[dim]KB cites: {', '.join(ans.get('kb_citations') or ['(none)'])}[/]")
+    console.print(
+        f"[dim]KB cites: {', '.join(ans.get('kb_citations') or ['(none)'])}[/]"
+    )
     if ans.get("risk_citations"):
         console.print(f"[dim]Risks: {', '.join(ans['risk_citations'])}[/]")
     console.print(f"[dim]Confidence: {ans.get('confidence', 0):.2f}[/]")
 
 
 @app.command(name="board-update")
-def board_update(period: str = typer.Option(None, "--period", help="YYYY-MM (default: current month)")):
+def board_update(
+    period: str = typer.Option(
+        None, "--period", help="YYYY-MM (default: current month)"
+    ),
+):
     """Generate a monthly board update PDF from the risk register."""
     result = asyncio.run(generate_board_update(period))
-    console.print(f"[green]Board update {result['id']} generated for {result['period']}[/]")
+    console.print(
+        f"[green]Board update {result['id']} generated for {result['period']}[/]"
+    )
     console.print(f"PDF: {result['pdf_path']}")
     console.print(f"SHA-256: {result['sha256']}")
     s = result["summary"]
@@ -77,6 +84,7 @@ def slack_bot(host: str = "0.0.0.0", port: int = 8765):
 @app.command()
 def version():
     from vciso import __version__
+
     console.print(f"vciso-assistant {__version__}")
 
 

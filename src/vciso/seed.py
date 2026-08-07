@@ -31,7 +31,9 @@ async def seed() -> None:
                     owner=r.get("owner", "(unassigned)"),
                     discovered_at=_to_date(r["discovered_at"]),
                     discovered_by=r.get("discovered_by", "(unknown)"),
-                    target_close_date=_to_date(r["target_close_date"]) if r.get("target_close_date") else None,
+                    target_close_date=_to_date(r["target_close_date"])
+                    if r.get("target_close_date")
+                    else None,
                     closed_at=_to_date(r["closed_at"]) if r.get("closed_at") else None,
                     notes=r.get("notes", "").strip(),
                     history=[],

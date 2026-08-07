@@ -14,8 +14,10 @@ def seeded_db():
     tmp = Path(tempfile.mkdtemp()) / "vciso_test.db"
     os.environ["VCISO_DATABASE_URL"] = f"sqlite+aiosqlite:///{tmp}"
     import vciso.db
+
     importlib.reload(vciso.db)
     import vciso.seed
+
     importlib.reload(vciso.seed)
     asyncio.run(vciso.seed.seed())
     yield tmp
