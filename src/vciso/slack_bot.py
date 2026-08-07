@@ -51,7 +51,10 @@ async def _post(channel: str, thread_ts: str | None, text: str) -> None:
     async with httpx.AsyncClient(timeout=10.0) as c:
         r = await c.post(
             "https://slack.com/api/chat.postMessage",
-            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+            },
             json=body,
         )
     log.info("vciso.slack.posted", channel=channel, ok=r.json().get("ok"))
@@ -68,16 +71,21 @@ async def events(req: Request):
     ts = req.headers.get("X-Slack-Request-Timestamp", "")
     sig = req.headers.get("X-Slack-Signature", "")
     # Allow unsigned in dev (token absent); reject in prod
-    if os.environ.get("VCISO_SLACK_SIGNING_SECRET"):
-        if not _verify_signature(body, ts, sig):
-            raise HTTPException(401, "bad signature")
+    if os.environ.get("VCISO_SLACK_SIGNING_SECRET") and not _verify_signature(
+        body, ts, sig
+    ):
+        raise HTTPException(401, "bad signature")
 
     payload = await req.json()
     if payload.get("type") == "url_verification":
         return {"challenge": payload["challenge"]}
 
     event = payload.get("event") or {}
-    if event.get("type") in ("app_mention", "message") and event.get("user") and event.get("bot_id") is None:
+    if (
+        event.get("type") in ("app_mention", "message")
+        and event.get("user")
+        and event.get("bot_id") is None
+    ):
         text = event.get("text", "")
         # Strip leading mention if present
         if "<@" in text:
@@ -88,11 +96,13 @@ async def events(req: Request):
             f"_Citations: {', '.join(ans.get('kb_citations', []) or ['(none)'])}_"
             + (
                 f"  ·  open risks: {', '.join(ans['risk_citations'])}"
-                if ans.get("risk_citations") else ""
+                if ans.get("risk_citations")
+                else ""
             )
             + (
                 f"\n_Confidence: {ans['confidence']:.2f}_"
-                if "confidence" in ans else ""
+                if "confidence" in ans
+                else ""
             )
         )
         await _post(event["channel"], event.get("ts"), formatted)

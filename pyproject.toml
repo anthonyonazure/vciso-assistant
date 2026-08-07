@@ -29,6 +29,7 @@ dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
     "ruff>=0.3",
+    "types-PyYAML>=6.0",
 ]
 
 [project.scripts]
@@ -46,3 +47,9 @@ b2b-agent-toolkit = { path = "../b2b-agent-toolkit", editable = true }
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+
+[tool.mypy]
+# WeasyPrint publishes no py.typed marker and there is no stub package on
+# PyPI, so a hand-written stub for the sliver of API this project touches
+# lives in ./stubs. This adds type information; it does not relax any check.
+mypy_path = "stubs"

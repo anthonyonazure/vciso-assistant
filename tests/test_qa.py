@@ -5,8 +5,16 @@ import pytest
 from vciso.qa import answer_question, kb_retrieve, relevant_risks
 
 KB = [
-    {"id": "KB-MFA", "topics": ["mfa", "authentication"], "statement": "MFA enforced via Entra."},
-    {"id": "KB-CRYPTO", "topics": ["encryption_at_rest"], "statement": "AES-256 with KV."},
+    {
+        "id": "KB-MFA",
+        "topics": ["mfa", "authentication"],
+        "statement": "MFA enforced via Entra.",
+    },
+    {
+        "id": "KB-CRYPTO",
+        "topics": ["encryption_at_rest"],
+        "statement": "AES-256 with KV.",
+    },
 ]
 
 
