@@ -11,10 +11,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           path: agent
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: anthonyonazure/b2b-agent-toolkit
           path: b2b-agent-toolkit
