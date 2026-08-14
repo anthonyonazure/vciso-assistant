@@ -7,7 +7,7 @@ requires-python = ">=3.11"
 license = { text = "MIT" }
 
 dependencies = [
-    "b2b-agent-toolkit",
+    "b2b-agent-toolkit @ git+https://github.com/anthonyonazure/b2b-agent-toolkit@main",
     "langgraph>=0.2.40",
     "anthropic>=0.39",
     "fastapi>=0.110",
@@ -53,3 +53,9 @@ asyncio_mode = "auto"
 # PyPI, so a hand-written stub for the sliver of API this project touches
 # lives in ./stubs. This adds type information; it does not relax any check.
 mypy_path = "stubs"
+
+# The b2b-agent-toolkit dependency names its git source explicitly, because
+# that package is not on PyPI and a bare name there is resolvable by anyone who
+# registers it. Hatchling refuses direct references unless told otherwise.
+[tool.hatch.metadata]
+allow-direct-references = true
